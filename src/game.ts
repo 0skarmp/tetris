@@ -6,7 +6,6 @@ import {
   INITIAL_DROP_TIME,
   LEVEL_SPEED_INCREASE,
   LINES_PER_LEVEL,
-  SCORE_VALUES,
 } from './constants';
 
 export type TetrominoType = 'I' | 'O' | 'T' | 'S' | 'Z' | 'J' | 'L';

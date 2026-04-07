@@ -8,7 +8,7 @@ import {
 } from './constants';
 
 class TetrisScene extends Phaser.Scene {
-  private game!: Game;
+  private tetrisGame!: Game;
   private boardRects: Phaser.GameObjects.Rectangle[][] = [];
   private ghostRects: Phaser.GameObjects.Rectangle[][] = [];
   private nextPieceRects: Phaser.GameObjects.Rectangle[][] = [];
@@ -37,7 +37,6 @@ class TetrisScene extends Phaser.Scene {
   private moveLeftTimer: number = 0;
   private moveRightTimer: number = 0;
   private softDropTimer: number = 0;
-  private lastMoveTime: number = 0;
 
   constructor() {
     super('TetrisScene');
@@ -63,7 +62,7 @@ class TetrisScene extends Phaser.Scene {
   }
 
   create() {
-    this.game = new Game();
+    this.tetrisGame = new Game();
     this.cameras.main.setBackgroundColor('#f0f0f5');
 
     this.add.rectangle(
@@ -166,9 +165,9 @@ class TetrisScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     this.pauseButton.on('pointerdown', () => {
-      this.game.paused = !this.game.paused;
-      this.pauseText.setText(this.game.paused ? 'RESUME' : 'PAUSE');
-      this.pauseButton.setFillStyle(this.game.paused ? 0xff8800 : 0x00bb66);
+      this.tetrisGame.paused = !this.tetrisGame.paused;
+      this.pauseText.setText(this.tetrisGame.paused ? 'RESUME' : 'PAUSE');
+      this.pauseButton.setFillStyle(this.tetrisGame.paused ? 0xff8800 : 0x00bb66);
     });
 
     this.gameOverPanel = this.add.rectangle(380, 360, 400, 200, 0x000000, 0.9)
@@ -197,9 +196,8 @@ class TetrisScene extends Phaser.Scene {
       this.resetGame();
     });
 
-    const enterKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
     this.input.keyboard!.on('keydown-ENTER', () => {
-      if (this.game.gameOver) {
+      if (this.tetrisGame.gameOver) {
         this.resetGame();
       }
     });
@@ -217,11 +215,11 @@ class TetrisScene extends Phaser.Scene {
   drawBoard() {
     for (let row = 0; row < BOARD_HEIGHT; row++) {
       for (let col = 0; col < BOARD_WIDTH; col++) {
-        this.boardRects[row][col].setFillStyle(this.game.board[row][col] || COLORS.EMPTY);
+        this.boardRects[row][col].setFillStyle(this.tetrisGame.board[row][col] || COLORS.EMPTY);
       }
     }
 
-    const piece = this.game.currentPiece;
+    const piece = this.tetrisGame.currentPiece;
     if (!piece) return;
 
     for (let r = 0; r < piece.shape.length; r++) {
@@ -239,10 +237,10 @@ class TetrisScene extends Phaser.Scene {
 
   drawGhost() { 
     this.ghostRects.flat().forEach(g => g.setVisible(false));
-    const piece = this.game.currentPiece;
+    const piece = this.tetrisGame.currentPiece;
     if (!piece) return;
 
-    const ghost = piece.getGhostPosition(this.game.board);
+    const ghost = piece.getGhostPosition(this.tetrisGame.board);
 
     for (let r = 0; r < piece.shape.length; r++) {
       for (let c = 0; c < piece.shape[r].length; c++) {
@@ -260,8 +258,8 @@ class TetrisScene extends Phaser.Scene {
   drawNextPiece() {
     this.nextPieceRects.flat().forEach(r => r.setFillStyle(COLORS.EMPTY));
 
-    const shape = this.game.nextPiece.shape;
-    const color = this.game.nextPiece.color;
+    const shape = this.tetrisGame.nextPiece.shape;
+    const color = this.tetrisGame.nextPiece.color;
 
     let offsetX = Math.floor((4 - shape[0].length) / 2);
     let offsetY = Math.floor((4 - shape.length) / 2);
@@ -286,7 +284,7 @@ class TetrisScene extends Phaser.Scene {
   }
 
   resetGame() {
-    this.game = new Game();
+    this.tetrisGame = new Game();
     this.gameOverPanel.setVisible(false);
     this.gameOverText.setVisible(false);
     this.restartButton.setVisible(false);
@@ -300,12 +298,12 @@ class TetrisScene extends Phaser.Scene {
   }
 
   updateUI() {
-    this.scoreText.setText(this.game.score.toString());
-    this.levelText.setText(this.game.level.toString());
+    this.scoreText.setText(this.tetrisGame.score.toString());
+    this.levelText.setText(this.tetrisGame.level.toString());
   }
 
   update(time: number) {
-    if (this.game.gameOver) {
+    if (this.tetrisGame.gameOver) {
       if (!this.gameOverPanel.visible) {
         this.showGameOver();
       }
@@ -313,19 +311,19 @@ class TetrisScene extends Phaser.Scene {
     }
 
     if (Phaser.Input.Keyboard.JustDown(this.rKey)) {
-      this.game.paused = !this.game.paused;
-      this.pauseText.setText(this.game.paused ? 'RESUME' : 'PAUSE');
-      this.pauseButton.setFillStyle(this.game.paused ? 0xff8800 : 0x00bb66);
+      this.tetrisGame.paused = !this.tetrisGame.paused;
+      this.pauseText.setText(this.tetrisGame.paused ? 'RESUME' : 'PAUSE');
+      this.pauseButton.setFillStyle(this.tetrisGame.paused ? 0xff8800 : 0x00bb66);
     }
 
-    if (this.game.paused) return;
+    if (this.tetrisGame.paused) return;
 
     const currentTime = time;
 
     // === MOVIMIENTO CONTINUO ===
     if (this.leftKey.isDown) {
       if (currentTime - this.moveLeftTimer > 80) {  
-        this.game.movePiece(-1, 0);
+        this.tetrisGame.movePiece(-1, 0);
         this.moveLeftTimer = currentTime;
       }
     } else {
@@ -334,7 +332,7 @@ class TetrisScene extends Phaser.Scene {
 
     if (this.rightKey.isDown) {
       if (currentTime - this.moveRightTimer > 80) {
-        this.game.movePiece(1, 0);
+        this.tetrisGame.movePiece(1, 0);
         this.moveRightTimer = currentTime;
       }
     } else {
@@ -343,22 +341,22 @@ class TetrisScene extends Phaser.Scene {
 
     if (this.downKey.isDown) {
       if (currentTime - this.softDropTimer > 50) {  
-        this.game.softDrop();
+        this.tetrisGame.softDrop();
         this.softDropTimer = currentTime;
       }
     } else {
       this.softDropTimer = 0;
     }
 
-    if (Phaser.Input.Keyboard.JustDown(this.upKey)) this.game.rotatePiece();
-    if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) this.game.hardDrop();
+    if (Phaser.Input.Keyboard.JustDown(this.upKey)) this.tetrisGame.rotatePiece();
+    if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) this.tetrisGame.hardDrop();
     if (Phaser.Input.Keyboard.JustDown(this.pKey)) {
-      this.game.paused = !this.game.paused;
-      this.pauseText.setText(this.game.paused ? 'RESUME' : 'PAUSE');
-      this.pauseButton.setFillStyle(this.game.paused ? 0xff8800 : 0x00bb66);
+      this.tetrisGame.paused = !this.tetrisGame.paused;
+      this.pauseText.setText(this.tetrisGame.paused ? 'RESUME' : 'PAUSE');
+      this.pauseButton.setFillStyle(this.tetrisGame.paused ? 0xff8800 : 0x00bb66);
     }
 
-    this.game.update(time);
+    this.tetrisGame.update(time);
 
     this.drawBoard();
     this.drawGhost();
